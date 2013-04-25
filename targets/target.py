@@ -14,10 +14,10 @@ class Target:
 		self.startTime 	   = None
 		self.movingState   = False
 		self.hitEvents 	   = []
-	def isHit(self):
-		return self.hit
 	def wasHit(self):
-		self.hit = True
+		return self.hit > 0
+	def reset(self):
+		self.hit = 0
 	def updateMovingTime(self):
 		if (not self.isMoving):
 			return

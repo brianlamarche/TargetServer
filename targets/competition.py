@@ -6,10 +6,14 @@ from utility import *
 from string  import *
 from groupConfig import *
 
-def setLedState(target):
-	pin 	 = target.led
-	wasHit   = target.hit
+SENSOR_HIT 	= False
+LED_ON 		= True
 
+def setLedState(target):
+
+	pin 	 = target.led
+	wasHit   = target.wasHit()
+	
 	if (wasHit):
 		GPIO.output(pin, not wasHit)
 	elif(target.isMoving):
@@ -31,9 +35,9 @@ def targetHit(target):
 def configPins(targets):
 	GPIO.setwarnings(False)
 	GPIO.setmode(GPIO.BOARD)
-	print "-"*20,  "config", "-"*20
 	for target in targets:
-		print "\tTarget: %d Name: %s" %(target.id, target.name)
+		print "\tTarget: %d" %(target.id)
+		print "\t\tName: %s" %(target.name)
 		print "\t\t LED:    %d" % (target.led)
 		print "\t\t Sensor: %d" % (target.input)
 		print "\t\t Friend: %s" % (str(target.isFriend))
@@ -41,14 +45,14 @@ def configPins(targets):
 		GPIO.setup(target.input, GPIO.IN)
 		GPIO.setup(target.led,   GPIO.OUT)
 		setLedState(target)
-	print "-"*20,  "end config", "-"*20
+	print "\t", "-"*20,  "end config", "-"*20
 
 def checkForHits(targets):
 	hits = {}
 	for target in targets:
 		pin    = target.input
 		isHigh = GPIO.input(pin)
-		if (isHigh == False):
+		if (isHigh == SENSOR_HIT):
 			targetHit(target)
 			if (not hits.has_key(target.id)):
 				hits[target.id] = target
@@ -70,14 +74,17 @@ def run(config):
   name      = config.name 
   groupName = config.groupName
 
-  print "Starting %s for %s" % (name, groupName)	
   t 		= .0001  # duty cycle per check
   targetsHit   	= 0
   totalTargets 	= len(targets)
-  raw_input("Press Any Key to Start: ")
+  #raw_input("Press Any Key to Start %s: " % (name))
+
+  for target in targets:
+	target.reset()
 
   hits 		= {}  
   startTime  	= time.time()
+
   while targetsHit < totalTargets:
      	time.sleep(t)
 	nextHits =  checkForHits(targets)
@@ -95,20 +102,15 @@ def run(config):
   else:
 	print "Timeout!"
 
-def startRun(config):
-	run(config)
-
-def startGroup(tests, totalTime):
+def startGroup(tests, totalTime, name="dev"):
 	isOk  = False
-	name  = raw_input("Group name: ")
 	group = GroupConfig(name)	
 
 	for test in tests:
 		targets = createTargets(test)
-
 		# create a configuration
 		config  = Config(targets, test, name, totalTime)
-		startRun(config)
+		run(config)
 
 		# Make sure that way track the current run.
 		group.configs.append(config)	
@@ -125,28 +127,43 @@ def isQuitCommand(command):
 def writeGroup(group):
 	print "Group: %s" % (group.name)
 
+def printTests(tests):
+	testHeader = "Tests"
+	print "-"*80	
+	print " "*(len(testHeader) / 2),
+	print testHeader
+	print "-"*80
+	for test in tests.keys():
+		print "\t", test
+	print 
+
 if __name__ == "__main__":
 	path 	  = "./games"	
 	totalTime = 2 * 60
 
 	# read in the tests
-	tests    = [] 
+	tests    = {} 
 	preTests = os.listdir(path)
 	for test in preTests:
-		tests.append(os.path.join(path, test))
-				
+		targets = createTargets(lower(os.path.join(path, test)))
+		config  = Config(targets, test, "", totalTime) 
+		tests[config.name] = config
+
 	# then run
 	groups 	= []
 	isQuit 	= False
 	while(not isQuit):
-	
-		command = raw_input("Command: [s: start] ")
-		isQuit = isQuitCommand(command)
+		printTests(tests)
+		time.sleep(5)
+		#command = raw_input("Command: [type game name to start] ")
+		command = "one"
+		print command
+		command = lower(command)
+		isQuit  = isQuitCommand(command)
 		if (not isQuit):
-			if (lower(command) == "s"):
-				group = startGroup(tests, totalTime)
-				groups.append(group)
-				writeGroup(group)
+			if (tests.has_key(command)):
+				run(tests[command])
+			
 	
 	for group in groups:
 		writeGroup(group)			

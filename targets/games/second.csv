@@ -1,2 +1,0 @@
-name, id, ledPin, sensor, isFriend, isMoving, moving duty cycle
-test, 0, 13, 11, False, True, 1.5
