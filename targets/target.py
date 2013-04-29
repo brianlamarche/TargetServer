@@ -1,4 +1,5 @@
 import time 
+import json	
 
 class Target:
 	def __init__(self, name, id, ledPin, inputPin, isFriend, isMoving, duty):
@@ -7,7 +8,7 @@ class Target:
 		self.hit      = 0
 		self.led      = ledPin
 		self.input    = inputPin
-		self.isFriend = isFriend
+		self.isFriend   = isFriend
 
 		self.isMoving 	   = isMoving
 		self.dutyCycle 	   = duty
@@ -29,3 +30,11 @@ class Target:
 		if (elapsed > self.dutyCycle):
 			self.startTime = currTime
 			self.movingState = not self.movingState
+	def __str__(self):
+		return json.dumps(self.__dict__)	
+	def toJson(self):
+		status 	= 1
+		if (self.isFriend):
+			status = 0	
+		d = "{'id':%d, 'hits':%d, 'status':%d}" % (int(self.id), self.hit, status)
+		return d

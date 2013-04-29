@@ -1,5 +1,4 @@
 import os 
-from config  import *
 from target  import *
 from string  import *
 
@@ -8,17 +7,16 @@ def isTrue(s):
 	return s in ["true"]
 
 def createTargets(path):
-	lines = readFile(path)
-	lines = map(lambda x: x[:-1], lines)
-
+	lines 	= readFile(path)
+	lines 	= map(lambda x: x[:-1], lines)
 	targets = []
 	for line in lines[1:]:
 		data = line.split(",")
 		if (len(data) > 6):
-			name	= data[0]
-			id 	= atoi(data[1])
-			ledPin  = atoi(data[2])
-			resPin  = atoi(data[3])
+			name	 = data[0]
+			id 	 = atoi(data[1])
+			ledPin   = atoi(data[2])
+			resPin   = atoi(data[3])
 			isFriend = isTrue(data[4])
 			isMoving = isTrue(data[5])
 			duty     = atof(data[6])
