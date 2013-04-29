@@ -14,7 +14,7 @@ if __name__ == "__main__":
 		local.start("./games")
 	else:
 		print "using server game mode"
-		startWeb(4500)
+		startWeb(4500, timeout = 30)
 	
 
 

@@ -3,18 +3,16 @@ import json
 
 class Target:
 	def __init__(self, name, id, ledPin, inputPin, isFriend, isMoving, duty):
-		self.name     = name	
-		self.id	      = id
-		self.hit      = 0
-		self.led      = ledPin
-		self.input    = inputPin
-		self.isFriend   = isFriend
-
+		self.name          = name	
+		self.id	           = id
+		self.hit           = 0
+		self.led           = ledPin
+		self.input         = inputPin
+		self.isFriend      = isFriend
 		self.isMoving 	   = isMoving
 		self.dutyCycle 	   = duty
-		self.startTime 	   = None
+		self.startTime	   = 0
 		self.movingState   = False
-		self.hitEvents 	   = []
 	def wasHit(self):
 		return self.hit > 0
 	def reset(self):
@@ -36,5 +34,4 @@ class Target:
 		status 	= 1
 		if (self.isFriend):
 			status = 0	
-		d = "{'id':%d, 'hits':%d, 'status':%d}" % (int(self.id), self.hit, status)
-		return d
+		return '{"id":%d, "hits":%d, "status":%d}' % (self.id, self.hit, status)
