@@ -2,13 +2,13 @@ import time
 import json	
 
 class Target:
-	def __init__(self, name, id, ledPin, inputPin, isFriend, isMoving, duty):
+	def __init__(self, name, id, ledPin, inputPin, status, isMoving, duty):
 		self.name          = name	
 		self.id	           = id
 		self.hit           = 0
 		self.led           = ledPin
 		self.input         = inputPin
-		self.isFriend      = isFriend
+		self.status        = status
 		self.isMoving 	   = isMoving
 		self.dutyCycle 	   = duty
 		self.startTime	   = 0
@@ -30,8 +30,3 @@ class Target:
 			self.movingState = not self.movingState
 	def __str__(self):
 		return json.dumps(self.__dict__)	
-	def toJson(self):
-		status 	= 1
-		if (self.isFriend):
-			status = 0	
-		return '{"id":%d, "hits":%d, "status":%d}' % (self.id, self.hit, status)

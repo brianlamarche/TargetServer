@@ -17,7 +17,7 @@ def createTargets(path):
 			id 	 = atoi(data[1])
 			ledPin   = atoi(data[2])
 			resPin   = atoi(data[3])
-			isFriend = isTrue(data[4])
+			isFriend = atoi(data[4])
 			isMoving = isTrue(data[5])
 			duty     = atof(data[6])
 			target   = Target(name, id, ledPin, resPin, isFriend, isMoving, duty)
