@@ -5,13 +5,12 @@ import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
-
-
-from target	import Target
-from targetIo 	import *
-from string  	import *
-from games   	import *
-
+import threading 
+from jsonTargets 	import *
+from target		import Target
+from targetIo 		import *
+from string  		import *
+from games   		import *
 
 # Stackoverflow.com - questions 6131915
 class ServerGame(tornado.websocket.WebSocketHandler):
@@ -20,11 +19,13 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		self.gameDir 	= "./games"
 		self.gameQuery 	= "getgames"
 		self.gameStart 	= "startgame"
-		self.games = {}
+		self.gameStop   = "stopgame"
+		self.games 	= {}
 
 		self.manager 	= GameManager()
 		self.manager.readGames(self.gameDir, 120)
-		self.proc	= TargetIo()
+		self.gameThread	= None
+		self.gameProc 	= TargetIo()
 							
 	def on_message(self, message):
 		print "\t", "Message from client: " + message
@@ -33,6 +34,7 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		messageOut 	= ""
 		if (data.has_key(self.gameQuery)):
 			messageOut = u"%s"%(self.manager)
+			self.write_message(messageOut)
 		elif (data.has_key(self.gameStart)):
 			# this part starts a new game...
 			gameId 	= data[self.gameStart]
@@ -44,37 +46,46 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 				
 			else:
 			  	messageOut = u'{"targets":null}' % (self.gameStart)			
+
+			self.write_message(messageOut)
+			if (newGame is not None):
+				if (self.gameThread is not None):
+					self.kill()
+				self.spawn(newGame)
+
+		elif (data.has_key(self.gameStop)):
+			print "aborting game..."
+			self.kill()
 		else:
 			# this part starts a 
 			messageOut = u"You said this: %s" % (message)
-		print "\t"*2, ">> Message Out: ", messageOut
-		self.write_message(messageOut)
-		if (newGame is not None):
-			self.proc.run(newGame, notifier = self.notify)
+			print "\t"*2, ">> Message Out: ", messageOut
+			self.write_message(messageOut)
+		
+	def kill(self):
+		'''
+		 need to kill the running thread
+		'''
+		self.gameProc.abort()
+		self.gameThread.join()
+		self.gameThread = None
+
+	def spawn(self, game):
+		# create a new game and spawn 
+		# a thread to run 
+
+		self.gameThread = threading.Thread(target=self.gameProc.run, args=(game, self.notify))
+		self.gameThread.start()
+		
 
 	def on_close(self):
 		print "*** web socket closed ***"
 	
-	def jsonTargets(self, targets):
-		#data 	   = map(lambda x : x.toJson(), targets)
-		#targetData = repr(data).replace("'", '"')
-		#print targetData
-		#data =  u'{"targets": %s}' % (targetData)
-		#d = {"targets": targets}
-		#return json.dumps(d)		
-		return json.dumps(targets, cls=Encoder)
-		
 	def notify(self, targets):
-		messageOut = self.jsonTargets(targets)
+		messageOut = ConvertTargetsToJson(targets)
 		print "\t"*2, "Notifying targets hit", messageOut
 		self.write_message("%s" % (messageOut))
 
-
-class Encoder(json.JSONEncoder):
-	def default(self, obj):
-		if not isinstance(obj, Target):
-			return super(Encoder, self).default(obj)
-		return obj.__dict__
 
 def startWeb(port, timeout = 120):
 	application = tornado.web.Application([

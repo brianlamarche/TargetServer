@@ -13,6 +13,7 @@ class TargetIo:
 		self.targetHitLength 	= targetHitTime 
 		self.lastHit  		= {}
 		self.dutyCycle		= 5
+		self.abortGame 		= False
 
 	def setLedState(self, target):
 
@@ -62,6 +63,10 @@ class TargetIo:
 	def printTarget(self, target):
 		print "\tTarget: %d" %(target.id)
 		print "\t\tName: %s" %(target.name)
+		
+		print "\t\t Points:    %d" % (target.points)
+		print "\t\t Spawn Rate:    %d" % (target.spawnRate)
+		print "\t\t Position:  (%.2f, %.2f, %.2f)" % (target.x, target.y, target.z)
 		print "\t\t LED:    %d" % (target.led)
 		print "\t\t Sensor: %d" % (target.input)
 		print "\t\t Status: %d" % (target.status)
@@ -104,10 +109,15 @@ class TargetIo:
 	def notifyGameWithTargets(self, targets, notifier = None):
 		if (notifier is not None):
 			notifier.__call__(targets)
+
+	def abort(self):
+		print "Aborted Game"
+		self.abortGame = True
 		
-	def run(self, game, notifier=None):
+	def run(self, game, notifier):
 		self.configPins(game.targets)
-		self.lastHit = {}
+		self.lastHit 	= {}
+		self.abortGame 	= False
 
 	  	# get the pertinent data
 	  	targets   	= game.targets
@@ -125,7 +135,7 @@ class TargetIo:
 		elapsed		= 0 
 		startTime  	= time.time()
 	
-		while targetsHit < totalTargets and totalTime > elapsed:
+		while targetsHit < totalTargets and totalTime > elapsed and self.abortGame == False:
 		     	time.sleep(t)
 			# check for hit targets
 			newHits = self.checkForHits(targets)

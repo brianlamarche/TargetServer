@@ -2,7 +2,7 @@ import time
 import json	
 
 class Target:
-	def __init__(self, name, id, ledPin, inputPin, status, isMoving, duty):
+	def __init__(self, name, id, ledPin, inputPin, status, isMoving, duty, spawnRate, points, x, y, z):
 		self.name          = name	
 		self.id	           = id
 		self.hit           = 0
@@ -13,6 +13,11 @@ class Target:
 		self.dutyCycle 	   = duty
 		self.startTime	   = 0
 		self.movingState   = False
+		self.spawnRate     = spawnRate
+		self.points  	   = points
+		self.x 		   = x
+		self.y 	  	   = y
+		self.z 		   = z
 	def wasHit(self):
 		return self.hit > 0
 	def reset(self):

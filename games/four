@@ -1,4 +1,0 @@
-name, id, ledPin, sensor, isFriend, isMoving, moving duty cycle
-one,   1, 11, 7,  0, False, 0.50
-two,   2, 15, 13, 1, False, 1.50
-three, 3, 16, 12, 0, False, 0.95

@@ -20,7 +20,12 @@ def createTargets(path):
 			isFriend = atoi(data[4])
 			isMoving = isTrue(data[5])
 			duty     = atof(data[6])
-			target   = Target(name, id, ledPin, resPin, isFriend, isMoving, duty)
+			spawnRate 	= atof(data[7])
+			points 		= atof(data[8])
+			x 		= atof(data[9])
+			y 		= atof(data[10])
+			z 		= atof(data[11])
+			target   = Target(name, id, ledPin, resPin, isFriend, isMoving, duty, spawnRate, points, x, y, z)
 			targets.append(target)
 	return targets
 	

@@ -1,7 +1,9 @@
 import time
-from targetIo 	import *
-from string  	import lower
-from games   	import Game, GameManager
+from targetIo 		import *
+from string  		import lower
+from games   		import Game, GameManager
+from jsonTargets 	import *
+from server 		import *
 
 class LocalGame:
 	'''
@@ -15,6 +17,9 @@ class LocalGame:
 			return x[command]
 		return False
 
+	def notify(self, targets):
+		message = ConvertTargetsToJson(targets)
+		print message
 
 	def start(self, path):
 		'''
@@ -43,7 +48,7 @@ class LocalGame:
 					print 
 					print " >> Starting game."
 					print 
-					proc.run(games[command])
+					proc.run(games[command], self.notify)
 					time.sleep(5)
 				else:
 					print 
