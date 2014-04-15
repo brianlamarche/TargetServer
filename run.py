@@ -12,7 +12,6 @@ class TargetIo:
 		self.pollTime 		= pollTime
 		self.targetHitLength 	= targetHitTime 
 		self.lastHit  		= {}
-		self.dutyCycle		= 5
 
 	def setLedState(self, target):
 
@@ -76,13 +75,17 @@ class TargetIo:
 			GPIO.setup(target.led,   GPIO.OUT)
 			self.setLedState(target)
 
-	def updateMovingTargets(self, targets):
+	def notifyGameWithTargets(self, targets, notifier = None):
 		'''
-		Updates the moving targets
+		This will be used later to tell the game client that 
+		a target was hit 
 		'''
 		for target in targets:
-			target.updateMovingTime()
-			self.setLedState(target)
+			print "\t",target
+		print 
+
+		if (notifier is not None):
+			notifier.__call__(targets)
 
 	def checkForHits(self, targets):
 		hits 	= {}
@@ -101,11 +104,15 @@ class TargetIo:
 					print "\t","Target hit"
 		return hits
 
-	def notifyGameWithTargets(self, targets, notifier = None):
-		if (notifier is not None):
-			notifier.__call__(targets)
-		
-	def run(self, game, notifier=None):
+	def updateMovingTargets(self, targets):
+		'''
+		Updates the moving targets
+		'''
+		for target in targets:
+			target.updateMovingTime()
+			self.setLedState(target)
+
+	def run(self, game, notifier = None):
 		self.configPins(game.targets)
 		self.lastHit = {}
 
@@ -129,7 +136,6 @@ class TargetIo:
 		     	time.sleep(t)
 			# check for hit targets
 			newHits = self.checkForHits(targets)
-
 			# then make the ones that are 'moving' move by 
 			# blinking
 			self.updateMovingTargets(targets)
@@ -155,9 +161,8 @@ class TargetIo:
   
 		if (totalTime > elapsed):
 			print "All targets hit!"
-
-
-
+		else:
+			print "Timeout! "
 
 
 
