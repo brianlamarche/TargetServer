@@ -27,6 +27,12 @@ class GameManager:
 		if (self.hasGame(game)):
 			return self.games[game]
 		return None
+	def getFlairGame(self):
+		game = None
+		for key in self.games.keys():
+			game = self.games[key]
+		return game
+
 	def __str__(self):
 		x = repr(self.games.keys())
 		x = x.replace("'", '"')

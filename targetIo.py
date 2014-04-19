@@ -14,46 +14,65 @@ class TargetIo:
 		self.lastHit  		= {}
 		self.dutyCycle		= 5
 		self.abortGame 		= False
+		self.pins = [11, 15, 16, 22]
+		
 
 	def setLedState(self, target):
+		pin 	 = target.led	
 
-		pin 	 = target.led
-		wasHit   = target.wasHit()
-	
-		if (wasHit):
-			GPIO.output(pin, not wasHit)
-		elif(target.isMoving):
-			# handle if the target is moving
+		# if the target is spawning...then turn it off
+		if (target.isSpawning()):
+			GPIO.output(pin, False)
+			return 
+		
+		# if the target is moving...make sure it's not in a moving state
+		if(target.isMoving):
 			GPIO.output(pin, target.movingState)
 		else:
-			GPIO.output(pin, not wasHit)
+			# otherwise we know that it's not spawning, so it wasnt hit
+			# and we know it's not moving
+			GPIO.output(pin, True)
+
+	def clearAll(self, pins):
+		GPIO.setwarnings(False)
+		GPIO.setmode(GPIO.BOARD)
+		for pin in pins:
+			GPIO.setup(pin,   GPIO.OUT)			
+			GPIO.output(pin, False)
 
 	def reset(self, targets):
 		for target in targets:
-			target.hit = False
-			setLedState(target)
+			target.hit = 0
+			self.setLedState(target)
 		
 	def targetHit(self, target): 	
 		'''
 		Increases the hit count of the target
 		'''
 		isValidHit = False
-		firstHit   = self.lastHit.has_key(target.name)
-		if (not firstHit):
+		t 	   = time.time()
+		firstHit   = target.getLastHit()  #self.lastHit.has_key(target.name)
+		if (firstHit is None):
 			isValidHit = True
-			self.lastHit[target.name] = time.time()
+			target.setHit(t)
+			self.lastHit[target.name] = t
 		else:
 			# here we check to see if the target was hit 
-			# but that the target we hit, is in the process
+			# is in the process
 			# of being hit, and the polling loop is faster
 			# than the response of the DIO sensor or someone
 			# is pressing the target 
-			currTime  = time.time()
-			lastTime  = self.lastHit[target.name]
-			self.lastHit[target.name] = currTime
-			if (currTime - lastTime > self.targetHitLength):
-				isValidHit = True
-				 
+			currTime  = t
+			lastTime  = firstHit # self.lastHit[target.name]
+			diff   	  = currTime - lastTime
+			if (diff > self.targetHitLength):	
+				# first check makes sure the polling loop isnt faster 
+				if (diff > target.spawnRate):
+					# the second set makes sure that the 
+					# target has had enough time to respawn
+					#self.lastHit[target.name] = currTime
+					isValidHit = True
+				 	target.setHit(t)
 		if (isValidHit):
 			target.hit = target.hit + 1
 		self.setLedState(target)
@@ -61,15 +80,16 @@ class TargetIo:
 		return isValidHit
 
 	def printTarget(self, target):
-		print "\tTarget: %d" %(target.id)
-		print "\t\tName: %s" %(target.name)
-		
+		print "\tTarget: %s\t\t%.2f" %(target.name, target.hit*target.points)
+		print "\t\tHits: %d" %(target.hit)
+		print "\t\tID: %s" %(target.id)
 		print "\t\t Points:    %d" % (target.points)
 		print "\t\t Spawn Rate:    %d" % (target.spawnRate)
 		print "\t\t Position:  (%.2f, %.2f, %.2f)" % (target.x, target.y, target.z)
 		print "\t\t LED:    %d" % (target.led)
 		print "\t\t Sensor: %d" % (target.input)
-		print "\t\t Status: %d" % (target.status)
+		status = {0: "Foe", 1: "Friend"}[target.status] 
+		print "\t\t Status: %s" % (status)
 		print "\t\t Moving: %s" % (str(target.isMoving))
 
 	def configPins(self, targets):
@@ -104,6 +124,8 @@ class TargetIo:
 				if (wasNewHit):
 					hits[target.id] = target
 					print "\t","Target hit"
+			else:
+				self.setLedState(target)
 		return hits
 
 	def notifyGameWithTargets(self, targets, notifier = None):
@@ -113,8 +135,27 @@ class TargetIo:
 	def abort(self):
 		print "Aborted Game"
 		self.abortGame = True
+
+	def flair(self, game, notify):		
+		self.clearAll(self.pins)
+		self.abortGame = False
+		N	= len(self.pins)
+		print "Resting...."
+		while self.abortGame == False:
+			for i in range(N):
+				for pin in self.pins:
+					GPIO.output(pin, False)
+				GPIO.output(self.pins[i], True)
+				time.sleep(.1)
+			for i in range(N, 0, -1):
+				for pin in self.pins:
+					GPIO.output(pin, False)
+				GPIO.output(self.pins[i - 1], True)
+				time.sleep(.1)
+			time.sleep(.5)			
 		
 	def run(self, game, notifier):
+		self.clearAll(self.pins)
 		self.configPins(game.targets)
 		self.lastHit 	= {}
 		self.abortGame 	= False
@@ -125,9 +166,11 @@ class TargetIo:
 		t  	  	= self.pollTime
 		targetsHit   	= 0
 		totalTargets 	= len(targets)
-
+		
+		self.reset(targets)	
 		for target in targets:
 			target.reset()
+			self.setLedState(target)
 	
 		hits 		= {}  
 		totalTime 	= game.totalTime
@@ -135,7 +178,7 @@ class TargetIo:
 		elapsed		= 0 
 		startTime  	= time.time()
 	
-		while targetsHit < totalTargets and totalTime > elapsed and self.abortGame == False:
+		while  totalTime > elapsed and self.abortGame == False:
 		     	time.sleep(t)
 			# check for hit targets
 			newHits = self.checkForHits(targets)
@@ -163,11 +206,11 @@ class TargetIo:
 		endTime  		= time.time()
 		game.elapsedTime 	= endTime - startTime
   
-		if (totalTime > elapsed):
-			print "All targets hit!"
+	
 
-
-
+		print 
+		for t in targets:
+			self.printTarget(t)
 
 
 

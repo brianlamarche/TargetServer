@@ -18,14 +18,32 @@ class Target:
 		self.x 		   = x
 		self.y 	  	   = y
 		self.z 		   = z
+		self.__lastHit     = None
+	def setHit(self, timeValue):
+		self.__lastHit = timeValue
+	def getLastHit(self):
+		return self.__lastHit
 	def wasHit(self):
 		return self.hit > 0
 	def reset(self):
+		self.__lastHit = None
 		self.hit = 0
+	def isSpawning(self):
+		if (self.__lastHit is None):
+			return False
+		
+		t    = time.time()
+		diff = t - self.__lastHit
+		return (diff < self.spawnRate)
+		
 	def updateMovingTime(self):
 		if (not self.isMoving):
 			return
-
+		
+		if (self.isSpawning()):
+			self.startTime = time.time()
+			return
+	
 		if (self.startTime == None):
 			self.startTime = time.time()
 		currTime = time.time()
