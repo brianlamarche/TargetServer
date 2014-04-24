@@ -23,12 +23,15 @@ def signalHandler(signum, frame):
 	is_closing = True
 
 def tryExit():
-	global is_closing
+	global is_closing, gameserver
 	
 	if (is_closing):
 		print "Shutting down the server...."
-
+			
 		print "stopping server!"
+		if (gameserver is not None):
+			gameserver.disconnect()
+
 		instance = tornado.ioloop.IOLoop.instance()
 		instance.stop()
 		print "Stopped server...."
@@ -120,8 +123,10 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 
 	def disconnect(self):
 		self.kill()
-		self.write_message(u'{"status": "disconnect"}')
-
+		try:
+			self.write_message(u'{"status": "disconnect"}')
+		except:
+			pass
 	def spawnFlair(self):
 		game = self.manager.getFlairGame()
 		self.gameThread = threading.Thread(target=self.gameProc.flair, args=(game, self.notify))
@@ -137,6 +142,8 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 
 	def on_close(self):
 		print "*** web socket closed ***"
+		self.kill()
+		self.spawnFlair()
 	
 	def notify(self, targets):
 		messageOut = ConvertTargetsToJson(targets)
@@ -150,7 +157,7 @@ def startWeb(port, timeout = 120):
 		(r'/ws', ServerGame),
 	])
 
-	#signal.signal(signal.SIGINT, signalHandler)
+	signal.signal(signal.SIGINT, signalHandler)
 	
 	http_server = tornado.httpserver.HTTPServer(application)
 	http_server.listen(port)

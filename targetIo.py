@@ -152,7 +152,11 @@ class TargetIo:
 					GPIO.output(pin, False)
 				GPIO.output(self.pins[i - 1], True)
 				time.sleep(.1)
+			time.sleep(.2)
+			for pin in self.pins:
+				GPIO.output(pin, False)			
 			time.sleep(.5)			
+		print "flair done"
 		
 	def run(self, game, notifier):
 		self.clearAll(self.pins)
