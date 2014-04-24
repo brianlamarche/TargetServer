@@ -40,6 +40,11 @@ class TargetIo:
 			GPIO.setup(pin,   GPIO.OUT)			
 			GPIO.output(pin, False)
 
+	def showAll(self, pins):
+		for pin in pins:
+			GPIO.setup(pin,   GPIO.OUT)			
+			GPIO.output(pin, True)
+
 	def reset(self, targets):
 		for target in targets:
 			target.hit = 0
