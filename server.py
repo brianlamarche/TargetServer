@@ -38,6 +38,7 @@ def tryExit():
 
 # Stackoverflow.com - questions 6131915
 class ServerGame(tornado.websocket.WebSocketHandler):
+
 	def open(self):
 		global gameserver
 		print "*** web socket opened ***"
@@ -50,7 +51,23 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		self.games 	 = {}
 
 		self.manager 	 = GameManager()
-		self.manager.readGames(self.gameDir, 120)
+		self.manager.readGames(self.gameDir, 60)
+
+	
+		if (gameserver  is not None):
+			print "Left over games..."
+			try:
+	
+	
+					try:
+						gameServer.kill()
+					except:
+						print "failed."
+						pass
+			except:
+				print "failed"
+				pass		
+		self.flairGame   = None
 		self.gameThread	 = None
 		self.gameProc 	 = TargetIo()
 
@@ -59,7 +76,7 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 
 		gameserver  = self
 
-	def on_message(self, message):
+	def on_message(self, message):		
 		print "\t", "Message from client: " + message
 		data 		= json.loads(lower(message))
 		newGame 	= None
@@ -71,8 +88,17 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 			# this part starts a new game...
 			gameId 	= data[self.gameStart]
 			game 	= self.manager.getGame(gameId)
+			skip = False
 			
-			if (game is not None):
+			try:
+				if self.flairGame is None:
+					print "ignoring game is already in progress"
+					skip = True
+			except:
+				self.flairGame = None
+				pass
+
+			if (game is not None and not skip):
 				for t in game.targets:
 					t.reset()
 			  	messageOut 	= ConvertTargetsToJson(game.targets) 
@@ -82,10 +108,11 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 
 			print "\treplying with", messageOut
 			self.write_message(messageOut)
-			if (newGame is not None):
+			if (newGame is not None and not skip):
 				if (self.gameThread is not None):
 					self.kill()
 				self.spawn(newGame)
+			
 		elif (data.has_key(self.gameTargets)):
 			print "handling game target request", self.gameTargets
 			gameId  = data[self.gameTargets]
@@ -102,6 +129,7 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 			print "aborting game..."
 			self.kill()
 			self.spawnFlair()
+			self.flairGame = self.gameThread
 			self.write_message(u'{"status": "stopped"}')
 		else:
 			# this part starts a 
@@ -113,13 +141,26 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		'''
 		 need to kill the running thread
 		'''
-		self.gameProc.abort()
+		if (self.gameProc is not None):
+			self.gameProc.abort()
 		
 		if (self.gameThread is None):
 			return
 
 		self.gameThread.join()
 		self.gameThread = None
+	def kill2(self, myProc, myThread):
+		'''
+		 need to kill the running thread
+		'''
+		if (myProc is not None):
+			myProc.abort()
+		
+		if (myThread is None):
+			return
+
+		myThread.join()
+		myThread = None
 
 	def disconnect(self):
 		self.kill()
@@ -131,6 +172,7 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		game = self.manager.getFlairGame()
 		self.gameThread = threading.Thread(target=self.gameProc.flair, args=(game, self.notify))
 		self.gameThread.start()
+		self.flairGame = self.gameThread
 
 	def spawn(self, game):
 		# create a new game and spawn 
@@ -150,8 +192,7 @@ class ServerGame(tornado.websocket.WebSocketHandler):
 		print "\t"*2, "Notifying targets hit", messageOut
 		self.write_message("%s" % (messageOut))
 
-
-def startWeb(port, timeout = 120):
+def startWeb(port, timeout = 60):
 	global gameserver
 	application = tornado.web.Application([
 		(r'/ws', ServerGame),
