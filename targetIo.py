@@ -14,9 +14,8 @@ class TargetIo:
 		self.lastHit  		= {}
 		self.dutyCycle		= 5
 		self.abortGame 		= False
-		self.pins = [11, 15, 16, 22]
+		self.pins 		= [11, 15, 16, 22]
 		
-
 	def setLedState(self, target):
 		pin 	 = target.led	
 
@@ -80,6 +79,14 @@ class TargetIo:
 				 	target.setHit(t)
 		if (isValidHit):
 			target.hit = target.hit + 1
+			if (target.canChangeSides):
+				h = int(target.hit / 2)
+				e = math.pow(2, h)
+				m = target.hit * e
+				target.points = target.points * m
+			else:
+				target.score  = target.points * target.hit
+				
 		self.setLedState(target)
 
 		return isValidHit
@@ -177,16 +184,17 @@ class TargetIo:
 		totalTargets 	= len(targets)
 		
 		self.reset(targets)	
+		self.lastHits = {}
 		for target in targets:
 			target.reset()
 			self.setLedState(target)
-	
+		
 		hits 		= {}  
 		totalTime 	= game.totalTime
 		prevElapsed 	= 0
 		elapsed		= 0 
 		startTime  	= time.time()
-	
+
 		while  totalTime > elapsed and self.abortGame == False:
 		     	time.sleep(t)
 			# check for hit targets

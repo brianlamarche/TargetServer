@@ -18,6 +18,8 @@ class Target:
 		self.x 		   = x
 		self.y 	  	   = y
 		self.z 		   = z
+		self.score 	   = 0
+		self.canChangeSides = False
 		self.__lastHit     = None
 	def setHit(self, timeValue):
 		self.__lastHit = timeValue
@@ -26,8 +28,9 @@ class Target:
 	def wasHit(self):
 		return self.hit > 0
 	def reset(self):
-		self.__lastHit = None
-		self.hit = 0
+		self.__lastHit  = None
+		self.hit 	= 0
+		self.score 	= 0
 	def isSpawning(self):
 		if (self.__lastHit is None):
 			return False

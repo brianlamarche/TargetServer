@@ -38,6 +38,8 @@ def tryExit():
 
 # Stackoverflow.com - questions 6131915
 class ServerGame(tornado.websocket.WebSocketHandler):
+	def check_origin(self, origin):
+		return True 
 
 	def open(self):
 		global gameserver
