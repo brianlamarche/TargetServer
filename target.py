@@ -19,7 +19,7 @@ class Target:
 		self.y 	  	   = y
 		self.z 		   = z
 		self.score 	   = 0
-		self.canChangeSides = False
+		self.canChangeSides = True
 		self.__lastHit     = None
 	def setHit(self, timeValue):
 		self.__lastHit = timeValue

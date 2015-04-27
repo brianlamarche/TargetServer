@@ -2,6 +2,7 @@ import  time
 import  RPi.GPIO as GPIO
 from 	sys 	 import argv
 from 	math 	 import *
+import math 
 
 SENSOR_HIT 	= False
 LED_ON 		= True
@@ -80,12 +81,17 @@ class TargetIo:
 		if (isValidHit):
 			target.hit = target.hit + 1
 			if (target.canChangeSides):
-				h = int(target.hit / 2)
-				e = math.pow(2, h)
-				m = target.hit * e
-				target.points = target.points * m
+				if (target.status == 1):
+					h = int(target.hit / 2)
+					e = math.pow(2, h)
+					m = target.hit * e
+					target.score  = abs(target.points) * m
+					target.status = 0
+				else:
+					target.score  = target.points * target.hit
+					target.status = 1
 			else:
-				target.score  = target.points * target.hit
+				target.score = target.points * target.hit
 				
 		self.setLedState(target)
 
